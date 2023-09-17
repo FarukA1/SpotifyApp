@@ -1,0 +1,7 @@
+﻿{
+  "baseUrl": "https://api.spotify.com/v1/",
+  "tokenUrl": "https://accounts.spotify.com/api/token",
+  "clientID": "c3bb43812e1746a6928e39453ce7c30c",
+  "clientSecret": "34e450b503d542679fe411b56587d5e0"
+}
+

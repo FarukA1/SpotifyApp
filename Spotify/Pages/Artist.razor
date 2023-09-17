@@ -1,0 +1,123 @@
+﻿@page "/artist/{Id}"
+@using Spotify.Ui.Models
+@using System.Text.Json
+
+@if (artist == null)
+{
+    <p>loading</p>
+}
+else
+{
+        <div class="container">
+            <div class="row d-flex justify-content-center align-items-center">
+                <div class="col">
+                    <div class="card">
+                        <div class="rounded-top text-white d-flex flex-row" style="background-color: #000; height:200px;">
+                            <div class="ms-4 mt-5 d-flex flex-column" style="width: 150px;">
+                                <img src="@artist.images[0].url"
+                                     alt="Generic placeholder image" class="img-fluid img-thumbnail mt-4 mb-2"
+                                     style="width: 150px; z-index: 1">
+                                <a href="@artist.external_urls.spotify" target="_blank" class="btn btn-outline-dark" data-mdb-ripple-color="dark"
+                                        style="z-index: 1;">
+                                    Open Profile
+                                </a>
+                            </div>
+                            <div class="ms-3" style="margin-top: 130px;">
+                                <h5>@artist.name</h5>
+                                <p>New York</p>
+                            </div>
+                        </div>
+                        <div class="p-4 text-black" style="background-color: #f8f9fa;">
+                            @*<div class="d-flex justify-content-end text-center py-1">
+                                <div>
+                                    <p class="mb-1 h5">253</p>
+                                    <p class="small text-muted mb-0">Photos</p>
+                                </div>
+                            </div>*@
+                        </div>
+                        <div class="card-body p-4 text-black">
+                            <div class="mb-5">
+                                <p class="lead fw-normal mb-1">About</p>
+                                <div class="p-4" style="background-color: #f8f9fa;">
+                                    <p class="font-italic mb-1">Genres: @string.Join(", ", artist.genres)</p>
+                                    <p class="font-italic mb-1">Popularity: @artist.popularity</p>
+                                </div>
+                            </div>
+                            <div class="d-flex justify-content-between align-items-center mb-4">
+                                <p class="lead fw-normal mb-0">Albums</p>
+                                @*<p class="mb-0"><a href="#!" class="text-muted">Show all</a></p>*@
+                            </div>
+                            <div class="container text-center">
+                                <div class="row row-cols-3">
+                                    @foreach (var album in albums.items)
+                                    {
+                                        <div class="card" style="width: 18rem;">
+                                            <img src="@album.images[0].url" class="card-img-top" alt="...">
+                                            <div class="card-body">
+                                                <h5 class="card-title">@album.name</h5>
+                                                <p class="card-text">Total Track: @album.total_tracks</p>
+                                                <p class="card-text">Type: @album.type</p>
+                                                <a href="@album.external_urls.spotify" target="_blank" class="btn btn-primary">Open Album</a>
+                                            </div>
+                                        </div>
+                                    }
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+}
+
+
+
+
+@code {
+    [Inject]
+    private HttpClient HttpClient { get; set; }
+
+
+    [Parameter]
+    public string Id { get; set; }
+
+    private Spotify.Ui.Models.Artist artist;
+    private Album albums;
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            var request = new HttpRequestMessage(HttpMethod.Get, $"https://localhost:7001/Artist/{Id}");
+            var response = await HttpClient.SendAsync(request);
+
+            if (response.IsSuccessStatusCode)
+            {
+                string responseContent = await response.Content.ReadAsStringAsync();
+                artist = JsonSerializer.Deserialize<Spotify.Ui.Models.Artist>(responseContent);
+            }
+        }
+        catch (HttpRequestException e)
+        {
+            //throw HttpRequestException("Error: " + e.Message);
+        }
+
+        try
+        {
+            var request = new HttpRequestMessage(HttpMethod.Get, $"https://localhost:7001/Artist/{Id}/albums");
+            var response = await HttpClient.SendAsync(request);
+
+            if (response.IsSuccessStatusCode)
+            {
+                string responseContent = await response.Content.ReadAsStringAsync();
+                albums = JsonSerializer.Deserialize<Spotify.Ui.Models.Album>(responseContent);
+            }
+        }
+        catch (HttpRequestException e)
+        {
+            //throw HttpRequestException("Error: " + e.Message);
+        }
+    }
+
+}
+

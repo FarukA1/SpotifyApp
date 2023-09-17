@@ -1,0 +1,67 @@
+﻿@using System.Text.Json
+@using Spotify.Ui.Models
+@page "/new-releases"
+@inject NavigationManager NavManager
+
+<PageTitle>New Releases</PageTitle>
+
+<h3>Albums</h3>
+
+<h2>New Releases</h2>
+
+@if (spotifyDto == null)
+{
+<p>loading</p>
+}
+
+@if (spotifyDto != null && spotifyDto.albums.items != null)
+{
+<div class="container text-center">
+    <div class="row row-cols-3">
+        @foreach (var album in spotifyDto.albums.items)
+            {
+        <div class="card" style="width: 18rem;">
+            <img src="@album.images[1].url" class="card-img-top" alt="...">
+            <div class="card-body">
+                <h5 class="card-title">@album.name</h5>
+                <p class="card-text">Artist: <a @onclick="() => goToArtist(album.artists[0].id)" href="javascript:void(0)"> @album.artists[0].name</a></p>
+                <p class="card-text">Release Date: @album.release_date</p>
+                <a href="@album.external_urls.spotify" target="_blank" class="btn btn-primary">Open Album</a>
+            </div>
+        </div>
+            }
+
+    </div>
+</div>
+}
+
+@code {
+    [Inject]
+    private HttpClient HttpClient { get; set; }
+
+    private SpotifyDto spotifyDto;
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            var request = new HttpRequestMessage(HttpMethod.Get, "https://localhost:7001/Album/new-releases");
+            var response = await HttpClient.SendAsync(request);
+
+            if (response.IsSuccessStatusCode)
+            {
+                string responseContent = await response.Content.ReadAsStringAsync();
+                spotifyDto = JsonSerializer.Deserialize<SpotifyDto>(responseContent);
+            }
+        }
+        catch (HttpRequestException e)
+        {
+            //throw HttpRequestException("Error: " + e.Message);
+        }
+    }
+
+    private void goToArtist(string artistId) {
+        NavManager.NavigateTo($"/artist/{artistId}");
+    }
+}
+

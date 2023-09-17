@@ -1,0 +1,151 @@
+﻿@using System.Text.Json
+@using Spotify.Ui.Models
+@inject NavigationManager NavManager
+@page "/"
+
+<PageTitle>Index</PageTitle>
+
+<h1>Search</h1>
+
+<div class="input-group mb-3">
+    <input type="text" class="form-control" placeholder="Search for artist or album or track" aria-label="Search for artist or album or track" aria-describedby="basic-addon2" @bind="query">
+    <div class="input-group-append">
+        <button class="btn btn-primary" type="button" @onclick="PerformSearch">Search</button>
+    </div>
+</div>
+
+@if (error)
+{
+    <div class="alert alert-danger" role="alert">
+        @errorMessage
+    </div>
+}
+
+@if (loading)
+{
+    <p>Loading....</p>
+}
+
+@if (!loading && spotifyDto != null)
+{
+    <div class="container">
+        <div class="row">
+            <div class="col-md">
+                Artist related result
+                @foreach (var artist in spotifyDto.artists.items)
+                {
+                    @if (artist.images.Count() > 0)
+                    {
+                        <div class="card mb-3" style="max-width: 540px;">
+                            <div class="row no-gutters">
+                                <div class="col-md-4">
+                                    <img src="@artist.images[0].url" class="card-img" alt="...">
+                                </div>
+                                <div class="col-md-8">
+                                    <div class="card-body">
+                                        <h5 class="card-title">@artist.name</h5>
+                                        <a @onclick="() => goToArtist(artist.id)" class="btn btn-primary">Details</a>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    }
+                }
+            </div>
+            <div class="col-md">
+                Album related result
+                @foreach (var album in spotifyDto.albums.items)
+                {
+                    @if (album.images.Count() > 0) {
+                        <div class="card mb-3" style="max-width: 540px;">
+                            <div class="row no-gutters">
+                                <div class="col-md-4">
+                                    <img src="@album.images[0].url" class="card-img" alt="...">
+                                </div>
+                                <div class="col-md-8">
+                                    <div class="card-body">
+                                        <p class="card-text"><a href="@album.external_urls.spotify" target="_blank" style="text-decoration:none;"> @album.name</a></p>
+                                        <p>Release Date: @album.release_date</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    }
+                }
+            </div>
+            <div class="col-md">
+                Track related result
+                @foreach (var track in spotifyDto.tracks.items)
+                {
+                    <div class="card mb-3" style="max-width: 540px;">
+                        <div class="row no-gutters">
+                            <div class="col-md-4">
+                                <img src="..." class="card-img" alt="...">
+                            </div>
+                            <div class="col-md-8">
+                                <div class="card-body">
+                                    <p>@track.name</p>
+                                    <p class="card-text"><a href="@track.external_urls.spotify" target="_blank" style="text-decoration:none;"> Play track</a></p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                }
+            </div>
+        </div>
+    </div>
+}
+
+
+
+
+@code {
+    [Inject]
+    private HttpClient HttpClient { get; set; }
+    private SpotifyDto spotifyDto;
+    string query = null;
+    bool loading = false;
+    bool error = false;
+    string errorMessage = null;
+
+    private async Task PerformSearch()
+    {
+        error = false;
+
+        if (!string.IsNullOrEmpty(query))
+        {
+            loading = true;
+            spotifyDto = null;
+
+            try
+            {
+                var request = new HttpRequestMessage(HttpMethod.Get, $"https://localhost:7001/Search/{query}");
+                var response = await HttpClient.SendAsync(request);
+
+
+                if (response.IsSuccessStatusCode)
+                {
+                    string responseContent = await response.Content.ReadAsStringAsync();
+                    spotifyDto = JsonSerializer.Deserialize<SpotifyDto>(responseContent);
+                    loading = false;
+                }
+            }
+            catch (HttpRequestException e)
+            {
+                errorMessage = $"Error making this request {e}";
+                error = true;
+            }
+        }
+        else
+        {
+            errorMessage = "Please insert a text";
+            error = true;
+        }
+    }
+
+    private void goToArtist(string artistId)
+    {
+        NavManager.NavigateTo($"/artist/{artistId}");
+    }
+}
+
